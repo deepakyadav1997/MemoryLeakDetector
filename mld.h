@@ -65,13 +65,32 @@ typedef struct _struct_db_{
     unsigned int count;
 }struct_db_t;
 
+//Object db structures
+typedef struct _object_db_rec_{
+    struct _object_db_rec_* next;
+    void* ptr;          //Key,i.e pointer to the object created
+    unsigned int units;
+    struct_db_rec_t* struct_rec;
+}object_db_rec_t;
+
+typedef struct _object_db_{
+    struct_db_t* struct_db;
+    object_db_rec_t* head;
+    unsigned int count;
+}object_db_t;
+
 //Add structure to the database
 int add_structure_to_struct_db(struct_db_t* struct_db,struct_db_rec_t* struct_rec);
 //Printing functions
 void print_structure_rec(struct_db_rec_t* struct_rec);
 void print_structure_db(struct_db_t* struct_db);
+void print_object_rec(object_db_rec_t* object_db_rec,int i);
+void print_object_db(object_db_t* object_db);
 //lookup by name
 struct_db_rec_t* struct_db_look_up(struct_db_t *struct_db, char *struct_name);
+
+
+void* xcalloc(object_db_t* object_db,char* struct_name,int units);
 
 
 #endif
