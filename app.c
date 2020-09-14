@@ -55,7 +55,9 @@ main(int argc, char **argv){
 
     /*Step 4 : Verify the correctness of structure database*/
     print_structure_db(struct_db);
-
+    if(struct_db_look_up(struct_db,"student_t")){
+        printf("struct found\n");
+    }
 
 
     // /*Working with object database*/

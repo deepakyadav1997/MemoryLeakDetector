@@ -70,4 +70,8 @@ int add_structure_to_struct_db(struct_db_t* struct_db,struct_db_rec_t* struct_re
 //Printing functions
 void print_structure_rec(struct_db_rec_t* struct_rec);
 void print_structure_db(struct_db_t* struct_db);
+//lookup by name
+struct_db_rec_t* struct_db_look_up(struct_db_t *struct_db, char *struct_name);
+
+
 #endif

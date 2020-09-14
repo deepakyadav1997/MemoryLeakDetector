@@ -2,6 +2,7 @@
 #include "mld.h"
 #include "css.h"
 #include<assert.h>
+#include<string.h>
 
 char *DATA_TYPE[] = {"UINT8", "UINT32", "INT32",
                      "CHAR", "OBJ_PTR", "VOID_PTR", "FLOAT",
@@ -14,6 +15,19 @@ int add_structure_to_struct_db(struct_db_t* struct_db,struct_db_rec_t* struct_re
     struct_db->count++; 
     return 0;
 }
+struct_db_rec_t* struct_db_look_up(struct_db_t *struct_db, char *struct_name){
+    if(!struct_db)
+        return NULL;
+    struct_db_rec_t *current_record = struct_db->head;
+    printf("Total Structures: %d\n",struct_db->count);
+    while(current_record){
+        if(strcmp(current_record->struct_name,struct_name) == 0)
+            return current_record;
+        current_record = current_record->next;
+    }
+    return NULL;
+}
+
 //Printing functions
 void print_structure_rec(struct_db_rec_t* struct_rec){
     if(!struct_rec) return;
