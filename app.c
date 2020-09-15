@@ -79,11 +79,24 @@ main(int argc, char **argv){
     // int support not added 
     //joseph->p = xcalloc(object_db, "int", 1);
 
+    student_t *stud = xcalloc(object_db, "student_t", 1);
+    strncpy(stud->stud_name, "shivani", strlen("shivani"));
+    stud->rollno = 345;
+    stud->age = 31;
+    stud->aggregate = 86.8;
+    stud->best_colleage = NULL;
     print_object_db(object_db);
-
     // run_mld_algorithm(object_db);
     // printf("Leaked Objects : \n");
     // report_leaked_objects(object_db);
-
+    xfree(object_db,stud);
+    print_object_db(object_db);
+    xfree(object_db,abhishek);
+    print_object_db(object_db);
+    xfree(object_db,shivani);
+    print_object_db(object_db);
+    xfree(object_db,joseph);
+    print_object_db(object_db);
+    
     return 0;
 }

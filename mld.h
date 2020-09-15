@@ -86,11 +86,12 @@ void print_structure_rec(struct_db_rec_t* struct_rec);
 void print_structure_db(struct_db_t* struct_db);
 void print_object_rec(object_db_rec_t* object_db_rec,int i);
 void print_object_db(object_db_t* object_db);
+void mld_dump_object_rec_detail (object_db_rec_t *obj_rec);
 //lookup by name
 struct_db_rec_t* struct_db_look_up(struct_db_t *struct_db, char *struct_name);
 
 
 void* xcalloc(object_db_t* object_db,char* struct_name,int units);
-
+void xfree(object_db_t* object_db,void* ptr);
 
 #endif
