@@ -60,8 +60,8 @@ void print_structure_db(struct_db_t* struct_db){
 void print_object_rec(object_db_rec_t *obj_rec, int i){
     if(!obj_rec) return;
     printf(ANSI_COLOR_MAGENTA "-----------------------------------------------------------------------------------------------------|\n"ANSI_COLOR_RESET);
-    printf(ANSI_COLOR_YELLOW "%-3d ptr = %-10p | next = %-10p | units = %-4d | struct_name = %-10s |\n"ANSI_COLOR_RESET, 
-        i, obj_rec->ptr, obj_rec->next, obj_rec->units, obj_rec->struct_rec->struct_name); 
+    printf(ANSI_COLOR_YELLOW "%-3d ptr = %-10p | next = %-10p | units = %-4d | struct_name = %-10s | is_root = %s |\n"ANSI_COLOR_RESET, 
+        i, obj_rec->ptr, obj_rec->next, obj_rec->units, obj_rec->struct_rec->struct_name, obj_rec->is_root ? "TRUE " : "FALSE"); 
     printf(ANSI_COLOR_MAGENTA "-----------------------------------------------------------------------------------------------------|\n"ANSI_COLOR_RESET);
 }
 
@@ -128,7 +128,8 @@ static  object_db_rec_t* object_db_lookup(object_db_t* object_db,
 static void add_object_to_db(object_db_t* object_db,
                              void* ptr,
                              int units,
-                             struct_db_rec_t* struct_rec
+                             struct_db_rec_t* struct_rec,
+                             mld_boolean_t is_root
                             ){
     //Check if the object exists                            
     object_db_rec_t* obj_rec = object_db_lookup(object_db,ptr);
@@ -142,6 +143,7 @@ static void add_object_to_db(object_db_t* object_db,
     obj_rec->struct_rec = struct_rec;
     obj_rec->next =NULL;
     obj_rec->units = units;
+    obj_rec->is_root = is_root;
 
     //Add the object to the object DB linkedlist
     obj_rec->next = object_db->head;
@@ -193,7 +195,7 @@ void* xcalloc(object_db_t* object_db,
                                                     struct_name);
     assert(struct_rec);
     void* ptr = calloc(units,struct_rec->ds_size);
-    add_object_to_db(object_db,ptr,units,struct_rec);
+    add_object_to_db(object_db,ptr,units,struct_rec,MLD_FALSE);
     return ptr;
 }
 
@@ -207,4 +209,128 @@ void xfree(object_db_t* object_db,void* ptr){
     object_db_rec_t* deleted_obj = remove_object_from_db(object_db,obj_rec);
     free(deleted_obj->ptr);
     free(deleted_obj);
+}
+
+void mld_register_root_object(object_db_t* object_db,
+                             void* objptr,
+                            char* struct_name,
+                            unsigned int units){
+    
+    struct_db_rec_t* struct_rec = struct_db_look_up(object_db->struct_db,struct_name);
+    assert(struct_rec);
+    add_object_to_db(object_db,objptr,units,struct_rec,MLD_TRUE);
+}
+void mld_set_dynamic_object_as_root(object_db_t* object_db,void* ptr){
+    object_db_rec_t* obj_rec = object_db_lookup(object_db,ptr);
+    assert(obj_rec);
+    obj_rec->is_root = MLD_TRUE;
+}
+
+static void init_mld_algotithms(object_db_t* obj_db){
+    object_db_rec_t* current = obj_db->head;
+    while(current){
+        current->is_visited = MLD_FALSE;
+        current = current->next;
+    }
+}
+static object_db_rec_t* get_next_root_object(object_db_t* object_db,object_db_rec_t* current_root){
+    object_db_rec_t* current_rec = NULL;
+    if(current_root == NULL){
+        current_rec = object_db->head;
+    }
+    else{
+        current_rec = current_root->next;
+    }
+    while(current_rec){
+        if(current_rec->is_root == MLD_TRUE){
+            return current_rec;
+        }
+        current_rec = current_rec->next;
+    }
+    return NULL;
+}
+
+static void mld_explore_objects_recursively(object_db_t* object_db,object_db_rec_t* parent_obj){
+    char* parent_object_ptr = NULL,
+        * child_obj_offset = NULL;
+    void* child_object_address = NULL;
+    field_info_t* field_info = NULL;
+    //struct_db_rec_t* struct_rec = struct_db_look_up();
+    object_db_rec_t* child_rec = NULL;
+    struct_db_rec_t* parent_struct_rec = parent_obj->struct_rec;
+    assert(parent_obj->is_visited == MLD_TRUE);
+    for(int i = 0;i<parent_obj->units;i++){
+        parent_object_ptr = (char*)parent_obj->ptr +(i*parent_struct_rec->ds_size);
+        for(int n_fields = 0;n_fields < parent_struct_rec->n_fields;n_fields++){
+            field_info = &parent_struct_rec->fields[n_fields];
+            switch(field_info->dtype){
+                case UINT8:
+                case UINT32:
+                case INT32:
+                case DOUBLE:
+                case FLOAT:
+                case CHAR:
+                case OBJ_STRUCT:
+                            break;
+                case OBJ_PTR:
+                default:{
+                    child_obj_offset = parent_object_ptr + field_info->offset;
+                    memcpy(&child_object_address,child_obj_offset,sizeof(void*));
+                    if(!child_object_address)
+                        continue;
+                    
+                }
+                child_rec = object_db_lookup(object_db,child_object_address);
+                assert(child_rec);
+                if(child_rec->is_visited == MLD_FALSE){
+                    child_rec->is_visited = MLD_TRUE;
+                    mld_explore_objects_recursively(object_db,child_rec);
+                }
+                else{
+                    continue;
+                }
+                    
+            }
+
+        }
+    }
+}
+
+void run_mld_algorithms(object_db_t* object_db){
+    init_mld_algotithms(object_db);
+    object_db_rec_t* root_obj = get_next_root_object(object_db,NULL);
+    while(root_obj){
+        if(root_obj->is_visited == MLD_TRUE){
+            root_obj = get_next_root_object(object_db,root_obj);
+            continue;
+        }
+        else{
+            root_obj->is_visited = MLD_TRUE;
+            mld_explore_objects_recursively(object_db,root_obj);
+            root_obj = get_next_root_object(object_db,root_obj);
+        }
+    }
+
+}
+
+void report_leaked_objects(object_db_t *object_db){
+
+    int i = 0;
+    object_db_rec_t *head;
+
+    printf("Dumping Leaked Objects\n");
+
+    for(head = object_db->head; head; head = head->next){
+        if(head->is_visited == MLD_FALSE){
+            print_object_rec(head, i++);
+            mld_dump_object_rec_detail(head);
+            printf("\n\n");
+        }
+    }
+}
+/*Support for primitive data types*/
+void mld_init_primitive_data_types_support(struct_db_t *struct_db){
+    REG_STRUCT(struct_db, int , 0);
+    REG_STRUCT(struct_db, float , 0);
+    REG_STRUCT(struct_db, double , 0);
 }

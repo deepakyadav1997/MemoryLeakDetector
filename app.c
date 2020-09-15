@@ -30,7 +30,7 @@ main(int argc, char **argv){
 
     /*Step 1 : Initialize a new structure database */
     struct_db_t *struct_db = calloc(1, sizeof(struct_db_t));
-    //mld_init_primitive_data_types_support(struct_db);
+    mld_init_primitive_data_types_support(struct_db);
         
     /*Step 2 : Create structure record for structure emp_t*/
     static field_info_t emp_fields[] = {
@@ -68,35 +68,37 @@ main(int argc, char **argv){
     /*Step 2 : Create some sample objects, equivalent to standard 
      * calloc(1, sizeof(student_t))*/
     student_t *abhishek = xcalloc(object_db, "student_t", 1);
-    //mld_set_dynamic_object_as_root(object_db, abhishek);
+    strncpy(abhishek->stud_name, "abhishek", strlen("abhishek"));
+    mld_set_dynamic_object_as_root(object_db, abhishek);
 
     student_t *shivani = xcalloc(object_db, "student_t", 1);
     strncpy(shivani->stud_name, "shivani", strlen("shivani"));
-    //abhishek->best_colleage = shivani;
+    abhishek->best_colleage = shivani;
 
     emp_t *joseph = xcalloc(object_db, "emp_t", 2);
-    //mld_set_dynamic_object_as_root(object_db, joseph);
-    // int support not added 
-    //joseph->p = xcalloc(object_db, "int", 1);
-
+    mld_set_dynamic_object_as_root(object_db, joseph);
+    //int support not added 
+    joseph->p = xcalloc(object_db, "int", 1);
+    
     student_t *stud = xcalloc(object_db, "student_t", 1);
-    strncpy(stud->stud_name, "shivani", strlen("shivani"));
+    strncpy(stud->stud_name, "stud", strlen("stud"));
     stud->rollno = 345;
     stud->age = 31;
     stud->aggregate = 86.8;
     stud->best_colleage = NULL;
+    //abhishek->best_colleage = stud;
     print_object_db(object_db);
-    // run_mld_algorithm(object_db);
-    // printf("Leaked Objects : \n");
-    // report_leaked_objects(object_db);
-    xfree(object_db,stud);
-    print_object_db(object_db);
-    xfree(object_db,abhishek);
-    print_object_db(object_db);
-    xfree(object_db,shivani);
-    print_object_db(object_db);
-    xfree(object_db,joseph);
-    print_object_db(object_db);
+    run_mld_algorithms(object_db);
+    printf("Leaked Objects : \n");
+    report_leaked_objects(object_db);
+    // xfree(object_db,stud);
+    // print_object_db(object_db);
+    // xfree(object_db,abhishek);
+    // print_object_db(object_db);
+    // xfree(object_db,shivani);
+    // print_object_db(object_db);
+    // xfree(object_db,joseph);
+    // print_object_db(object_db);
     
     return 0;
 }

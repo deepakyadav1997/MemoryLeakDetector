@@ -16,6 +16,11 @@ typedef enum {
     OBJ_STRUCT
 } data_type_t;
 
+typedef enum {
+    MLD_TRUE,
+    MLD_FALSE
+}mld_boolean_t;
+
 #define OFFSETOF(struct_name,field_name)                            \
     (intptr_t)&(((struct_name*)0)->field_name)
 
@@ -71,6 +76,9 @@ typedef struct _object_db_rec_{
     void* ptr;          //Key,i.e pointer to the object created
     unsigned int units;
     struct_db_rec_t* struct_rec;
+    mld_boolean_t is_visited;
+    mld_boolean_t is_root;
+
 }object_db_rec_t;
 
 typedef struct _object_db_{
@@ -90,8 +98,19 @@ void mld_dump_object_rec_detail (object_db_rec_t *obj_rec);
 //lookup by name
 struct_db_rec_t* struct_db_look_up(struct_db_t *struct_db, char *struct_name);
 
+//API's to register root objects
+void mld_register_root_object(object_db_t* object_db,
+                             void* objptr,
+                            char* struct_name,
+                            unsigned int units);
+void mld_set_dynamic_object_as_root(object_db_t* object_db,void* ptr);
 
 void* xcalloc(object_db_t* object_db,char* struct_name,int units);
 void xfree(object_db_t* object_db,void* ptr);
+
+void report_leaked_objects(object_db_t *object_db);
+void run_mld_algorithms(object_db_t* object_db);
+
+void mld_init_primitive_data_types_support(struct_db_t* struct_db);
 
 #endif
